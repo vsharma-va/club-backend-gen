@@ -1,0 +1,6 @@
+/backend/api/__pycache__/*
+/backend/api/api.config
+/backend/api/routers/__pycache__/*
+/backend/api/routers/auth/__pycache__/*
+/backend/api/db/__pycache__/*
+/backend/api/env/*

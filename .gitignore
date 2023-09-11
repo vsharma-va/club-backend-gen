@@ -4,3 +4,7 @@
 /backend/api/routers/auth/__pycache__/*
 /backend/api/db/__pycache__/*
 /backend/api/env/*
+/client/*
+/backend/api/dependencies/*
+/backend/api/node_modules/*
+/backend/api/aws_lambda_artifact.zip

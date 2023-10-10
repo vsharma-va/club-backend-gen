@@ -1,6 +1,7 @@
 from supabase import Client, PostgrestAPIResponse
 import datetime
 from global_var import parser
+import json
 import jwt
 
 
@@ -15,7 +16,7 @@ class Supa:
             .eq("user_id", f"{user_id}")
             .execute()
         )
-        
+
     def fetch_active_qr(self, user_id: str):
         response = (
             self.supabase.table("track_user_table")
@@ -131,7 +132,7 @@ class Supa:
                 .eq("user_id", data["user_id"])
                 .eq("event_id", data["event_id"])
             ).execute()
-            if(len(check_attendance.data) != 0):
+            if len(check_attendance.data) != 0:
                 response = (
                     self.supabase.table("track_user_table")
                     .update({"attended": True})
@@ -149,7 +150,30 @@ class Supa:
                     }
             else:
                 return {
-                    "status": 409, "detail": {"msg": "Attendance Already Confirmed"},
+                    "status": 409,
+                    "detail": {"msg": "Attendance Already Confirmed"},
                 }
         except jwt.DecodeError:
             return {"status": 422, "detail": {"msg": "Invalid JWT"}}
+
+    def return_qr_details_procedure(self, jwt_ar):
+        try:
+            data = jwt.decode(
+                jwt_ar, parser["EVENTS"]["secret_key"], algorithms=["HS256"]
+            )
+            user_details = self.supabase.auth.admin.get_user_by_id(
+                data["user_id"]
+            )
+            user_details_dict: dict = json.loads(user_details.model_dump_json())
+            user_metadata: dict = user_details_dict['user']['user_metadata']
+            user_metadata['email'] = user_details_dict['user']['email']
+            # print(user_metadata)
+            if len(user_metadata.keys()) != 0:
+                return {
+                    "status": 200,
+                    "detail": {"msg": "Success", "user_details": user_metadata},
+                }
+            else:
+                return {"status": 409, "detail": {"msg": "User not found"}}
+        except jwt.DecodeError:
+            return {"status": 422, "detail": {"msg": "Invalid User"}}

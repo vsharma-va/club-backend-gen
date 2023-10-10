@@ -10,13 +10,20 @@ router = APIRouter()
 
 
 class UserSignUp(BaseModel):
-    # current requirements for sign up ->
-    # username, email_id, password (hashed), batch
+    email_id: str
+    password: str
+    phone_number: int
+    branch: str
+    year: int
+
+class UserSignIn(BaseModel):
     email_id: str
     password: str
 
+
 class AppAuth(BaseModel):
     app_user_auth_key: str
+
 
 class UserAuthState(BaseModel):
     access_token: str
@@ -41,15 +48,22 @@ async def check_auth_state(user_state: UserAuthState):
     except gotrue.errors.AuthApiError as err:
         raise HTTPException(status_code=401, detail=f"{err}")
 
+
 @router.post("/auth/app/signin/")
 async def app_signin(app_user: AppAuth):
     db_client = Supa(supabase)
-    response = db_client.sign_in_app_procedure(app_user_auth_key=app_user.app_user_auth_key)
+    response = db_client.sign_in_app_procedure(
+        app_user_auth_key=app_user.app_user_auth_key
+    )
     return response
+
 
 @router.post("/auth/check_state/")
 async def check_state_route(user_state: UserAuthState = Depends(check_auth_state)):
-    return {"status": 200, "detail": {"msg": "Valid credentials", "user_state": user_state}}
+    return {
+        "status": 200,
+        "detail": {"msg": "Valid credentials", "user_state": user_state},
+    }
 
 @router.post("/auth/signup/")
 async def signup(user: UserSignUp) -> dict:
@@ -58,6 +72,13 @@ async def signup(user: UserSignUp) -> dict:
             {
                 "email": user.email_id,
                 "password": user.password,
+                "options": {
+                    "data": {
+                        "phone_number": user.phone_number,
+                        "branch": user.branch,
+                        "year": user.year,
+                    }
+                },
             }
         )
         new_user: UserAuthState = UserAuthState(
@@ -82,7 +103,7 @@ async def signup(user: UserSignUp) -> dict:
 
 
 @router.post("/auth/signin/")
-async def signin(user: UserSignUp):
+async def signin(user: UserSignIn):
     try:
         response = supabase.auth.sign_in_with_password(
             {

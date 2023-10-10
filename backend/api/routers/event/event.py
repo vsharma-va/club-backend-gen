@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, Body
+from pydantic import BaseModel
 from routers.auth import auth as auth
 import db.supa as supa
-from global_var import supabase
+from global_var import supabase, supabaseAuthClient
 from typing import Annotated
 
 router = APIRouter()
 
+class Qr(BaseModel):
+    jwt_qr: str
 
 @router.post("/event/register/{event_id}")
 async def register_for_event(
@@ -29,7 +32,7 @@ async def fetch_qr(user_state: auth.UserAuthState = Depends(auth.check_auth_stat
     return response
 
 
-@router.post("/event/check_qr/")
+@router.post("/event/app/check_qr")
 async def check_qr(app_user_auth_key: Annotated[str, Body()], jwt_qr: Annotated[str, Body()]):
     db_client = supa.Supa(supabase)
     response = db_client.sign_in_app_procedure(app_user_auth_key=app_user_auth_key)
@@ -38,6 +41,14 @@ async def check_qr(app_user_auth_key: Annotated[str, Body()], jwt_qr: Annotated[
     elif response["status"] == 200:
         response = db_client.check_qr_procedure(jwt_qr)
         return response
+    
+@router.post("/event/app/qr_details")
+async def return_qr_details(qr: Qr):
+    print(qr.jwt_qr)
+    db_client = supa.Supa(supabaseAuthClient)
+    response = db_client.return_qr_details_procedure(jwt_ar=qr.jwt_qr)
+    return response
+    
 
 
 @router.get("/event/fetch")
